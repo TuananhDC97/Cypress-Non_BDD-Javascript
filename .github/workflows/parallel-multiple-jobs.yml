@@ -1,0 +1,145 @@
+name: regression test
+on:
+  push:
+    branches:
+      - 'main'  
+jobs:  
+  # do not install every dependency in this example
+  # just install Cypress, but make sure to cache it
+  install:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # cache npm modules and Cypress binary folder
+      # we can use "package-lock.json" as the key file
+      # to make sure we use the precise Cypress version
+      # (which is important when using ^ version in package.json)
+      # see https://github.com/actions/cache
+      - name: Cache npm and Cypress
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/Cypress
+            node_modules
+          key: my-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      
+      - name: Install Dependencies        
+        run: npm install
+   
+
+  ui-chrome:
+    # example where we pass specs to run via multiple lines and wildcards
+    runs-on: ubuntu-22.04
+    needs: install
+    # Cypress Docker image with Chrome v106
+    # and Firefox v106 pre-installed
+    container: cypress/browsers:node18.12.0-chrome106-ff106
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cypress tests
+        uses: cypress-io/github-action@v5
+        continue-on-error: true
+        with:     
+          spec: cypress/e2e/ui/delete-book.cy.js            
+          browser: chrome
+          env: environmentName=dev,allure=true
+      
+      - name: Upload allure-results
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-results
+          path: cypress/reports/allure-results    
+  
+  ui-edge:    
+    runs-on: ubuntu-22.04
+    needs: install
+    # Cypress Docker image with Chrome v106
+    # and Firefox v106 pre-installed
+    container: cypress/browsers:node-18.16.0-chrome-113.0.5672.92-1-ff-113.0-edge-113.0.1774.35-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cypress tests
+        uses: cypress-io/github-action@v5
+        continue-on-error: true
+        # cypress/e2e/ui/register-student-form.cy.js
+            # cypress/e2e/ui/delete-book.cy.js
+        with:     
+          spec: cypress/e2e/ui/login.cy.js
+          browser: edge    
+          env: environmentName=prod,allure=true
+      
+      - name: Upload allure-results
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-results
+          path: cypress/reports/allure-results    
+  
+  generate-report:
+    needs: [ui-chrome, ui-edge]    
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write            
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Cache npm and Cypress
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/Cypress
+            node_modules
+          key: my-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      
+      - name: Install Allure Commandline
+        run: npm install -g allure-commandline
+
+      - name: Create report folder
+        run: |
+          mkdir -p reports/allure-results
+          mkdir -p reports/allure-reports
+      
+      - name: Download allure-result
+        uses: actions/download-artifact@v3
+        with:
+          name: allure-results
+          path: reports/allure-results
+           
+      - name: Generate HTML Allure reports
+        run: allure generate reports/allure-results --clean -o reports/allure-reports
+      
+      # - name: Upload Allure reports artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: reports
+      #     path: reports
+      
+      - name: Copy test execution videos and screenshots        
+        run: |
+          mkdir public
+          if [ -d "cypress/screenshots" ]; then
+            cp -r cypress/screenshots public/screenshots
+          fi
+          if [ -d "cypress/videos" ]; then
+            cp -r cypress/videos public/videos
+          fi         
+          
+      - name: Deploy report page to Github page
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: reports/allure-reports

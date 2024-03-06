@@ -1,0 +1,64 @@
+name: Parallel on Cypress Dashboard
+on:
+  push:
+    branches:
+      - 'main'  
+jobs:  
+  # do not install every dependency in this example
+  # just install Cypress, but make sure to cache it
+  install:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # cache npm modules and Cypress binary folder
+      # we can use "package-lock.json" as the key file
+      # to make sure we use the precise Cypress version
+      # (which is important when using ^ version in package.json)
+      # see https://github.com/actions/cache
+      - name: Cache npm and Cypress
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/Cypress
+            node_modules
+          key: my-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      
+      - name: Install Dependencies        
+        run: npm install
+   
+
+  ui-chrome:
+    # example where we pass specs to run via multiple lines and wildcards
+    runs-on: ubuntu-22.04
+    needs: install
+    # Cypress Docker image with Chrome v106
+    # and Firefox v106 pre-installed
+    container: cypress/browsers:node18.12.0-chrome106-ff106
+    strategy:
+      # Cypress will continue running the remaining tests in the suite, even if a failure occurs.
+      fail-fast: false
+      matrix: 
+        containers: [1,2,3,4,5]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cypress tests
+        uses: cypress-io/github-action@v5
+        continue-on-error: true
+        with:
+          browser: chrome
+          env: environmentName=dev,allure=true,CI=1
+          record: true
+          parallel: true
+          group: 'UI Chrome'         
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
