@@ -1,4 +1,5 @@
 "Status","Start Time","Stop Time","Duration in ms","Parent Suite","Suite","Sub Suite","Test Class","Test Method","Name","Description"
-"passed","Wed Mar 13 03:00:35 UTC 2024","Wed Mar 13 03:00:44 UTC 2024","9178","","Login","","","","Login unsuccessfully with empty username and/or password",""
-"passed","Wed Mar 13 03:00:19 UTC 2024","Wed Mar 13 03:00:35 UTC 2024","15707","","Login","","","","Login unsuccessfully with invalid account",""
-"passed","Wed Mar 13 02:59:42 UTC 2024","Wed Mar 13 03:00:19 UTC 2024","37242","","Login","","","","Login successfully with valid account",""
+"broken","Wed Mar 13 02:59:23 UTC 2024","Wed Mar 13 03:00:32 UTC 2024","68673","","Login","","","","Login successfully with valid account",""
+"passed","Wed Mar 13 02:59:20 UTC 2024","Wed Mar 13 02:59:54 UTC 2024","33148","","Profile","","","","Delete a book successfully",""
+"skipped","Wed Mar 13 03:00:32 UTC 2024","Wed Mar 13 03:00:32 UTC 2024","2","","Login","","","","Login unsuccessfully with invalid account",""
+"skipped","Wed Mar 13 03:00:32 UTC 2024","Wed Mar 13 03:00:32 UTC 2024","0","","Login","","","","Login unsuccessfully with empty username and/or password",""
