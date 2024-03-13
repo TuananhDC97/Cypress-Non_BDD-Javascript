@@ -1,6 +1,6 @@
 # Project Name #
 
-Study Project: Automation Testing with Cypress and JavaScript
+Study Project: Automation Testing with Cypress using JavaScript
 
 # Author #
 
